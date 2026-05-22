@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="theme-color" content="#0a0a0f"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="STORAGE"/>
+<link rel="manifest" href="manifest.json"/>
+<title>STORAGE — Box Inventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--border:#2a2a3a;
+    --accent:#f5a623;--accent2:#ff6b35;--green:#39ff14;--blue:#00d4ff;
+    --text:#e8e8f0;--muted:#5a5a70;--danger:#ff3b5c;
+    --mono:'Share Tech Mono',monospace;--display:'Barlow Condensed',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100dvh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9999}
+
+  .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 16px 12px;position:sticky;top:0;z-index:100}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .logo{font-family:var(--display);font-weight:900;font-size:28px;letter-spacing:4px;color:var(--accent);text-transform:uppercase;line-height:1}
+  .logo span{display:block;font-size:10px;font-family:var(--mono);color:var(--muted);letter-spacing:6px;font-weight:400;margin-top:2px}
+  .stats-pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--muted)}
+  .stats-pill b{color:var(--accent)}
+
+  .search-wrap{position:relative;display:flex;gap:8px}
+  .search-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:14px;padding:10px 40px 10px 14px;outline:none;transition:border-color .2s}
+  .search-input:focus{border-color:var(--accent)}
+  .search-input::placeholder{color:var(--muted)}
+  .search-clear{position:absolute;right:58px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;display:none;padding:4px}
+  .voice-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}
+  .voice-btn.listening{background:var(--danger);border-color:var(--danger);color:white;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,.4)}50%{box-shadow:0 0 0 8px rgba(255,59,92,0)}}
+
+  .tabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid var(--border);background:var(--bg2);overflow-x:auto;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{background:none;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;color:var(--muted);font-family:var(--mono);font-size:11px;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:all .2s;position:relative;bottom:-1px}
+  .tab.active{background:var(--bg);border-color:var(--border);border-bottom-color:var(--bg);color:var(--accent)}
+
+  .content{padding:16px;padding-bottom:120px}
+
+  .search-result{background:var(--bg2);border:1px solid var(--accent);border-radius:10px;padding:16px;margin-bottom:12px;animation:slideIn .2s ease}
+  .result-item{font-family:var(--display);font-weight:700;font-size:20px;color:var(--text);letter-spacing:1px;margin-bottom:6px}
+  .result-box{display:flex;align-items:center;gap:8px}
+  .result-arrow{color:var(--accent);font-size:12px}
+  .result-location{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:2px}
+  .no-results{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+  .no-results .icon{font-size:40px;margin-bottom:12px}
+
+  .box-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:border-color .2s;animation:slideIn .3s ease}
+  .box-card:hover{border-color:var(--accent)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .box-header{display:flex;align-items:center;padding:14px 16px;cursor:pointer;gap:12px;user-select:none}
+  .box-icon{font-size:22px;flex-shrink:0}
+  .box-name{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:1px;flex:1;line-height:1.2}
+  .box-count{background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--muted);padding:3px 8px;flex-shrink:0}
+  .box-chevron{color:var(--muted);font-size:12px;transition:transform .3s;flex-shrink:0}
+  .box-card.open .box-chevron{transform:rotate(180deg)}
+  .box-actions{display:flex;gap:6px;padding:0 16px 10px}
+  .box-action-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .2s}
+  .box-action-btn.rename:hover{color:var(--blue);border-color:var(--blue)}
+  .box-action-btn.del:hover{color:var(--danger);border-color:var(--danger)}
+  .box-body{border-top:1px solid var(--border);padding:12px 16px;display:none}
+  .box-card.open .box-body{display:block}
+
+  .items-list{list-style:none;margin-bottom:12px}
+  .item-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bg3)}
+  .item-row:last-child{border-bottom:none}
+  .item-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+  .item-text{flex:1;font-size:13px;line-height:1.3}
+  .item-edit,.item-delete{background:none;border:none;cursor:pointer;font-size:14px;padding:4px;border-radius:4px;transition:background .2s;opacity:0;color:var(--muted)}
+  .item-row:hover .item-edit,.item-row:hover .item-delete{opacity:1}
+  .item-edit:hover{background:var(--bg3);color:var(--blue)}
+  .item-delete:hover{background:var(--bg3);color:var(--danger)}
+  /* always show on touch devices */
+  @media (hover:none){.item-edit,.item-delete{opacity:.6}}
+
+  .add-row{display:flex;gap:8px;margin-top:4px}
+  .add-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:8px 12px;outline:none;transition:border-color .2s}
+  .add-input:focus{border-color:var(--accent)}
+  .add-input::placeholder{color:var(--muted)}
+  .add-btn{background:var(--accent);border:none;border-radius:6px;color:var(--bg);font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:1px;padding:0 14px;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+  .add-btn:active{opacity:.8}
+
+  .fab{position:fixed;bottom:46px;right:20px;background:var(--accent);border:none;border-radius:16px;color:var(--bg);font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:2px;padding:14px 20px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(245,166,35,.4);transition:all .2s;z-index:50}
+  .fab:active{transform:scale(.97)}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+  .modal-title{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:2px;margin-bottom:16px;color:var(--accent)}
+  .modal-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:14px;padding:12px 14px;outline:none;margin-bottom:12px;transition:border-color .2s}
+  .modal-input:focus{border-color:var(--accent)}
+  .modal-btns{display:flex;gap:10px}
+  .modal-cancel{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:var(--mono);font-size:14px;padding:12px;cursor:pointer}
+  .modal-confirm{flex:2;background:var(--accent);border:none;border-radius:8px;color:var(--bg);font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:1px;padding:12px;cursor:pointer}
+  .modal-danger{flex:2;background:var(--danger);border:none;border-radius:8px;color:white;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:1px;padding:12px;cursor:pointer}
+
+  /* Voice search modal style */
+  .voice-modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:40px 20px;width:100%;max-width:500px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1);text-align:center}
+  .modal-overlay.open .voice-modal{transform:translateY(0)}
+  .voice-rings{position:relative;width:100px;height:100px;margin:0 auto 24px}
+  .voice-ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--danger);animation:ringPulse 1.5s ease-out infinite}
+  .voice-ring:nth-child(2){animation-delay:.5s}
+  .voice-ring:nth-child(3){animation-delay:1s}
+  @keyframes ringPulse{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.5);opacity:0}}
+  .voice-mic-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:42px}
+  .voice-label{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:3px;color:var(--danger);margin-bottom:8px;text-transform:uppercase}
+  .voice-transcript{font-size:13px;color:var(--muted);padding:0 30px;min-height:20px;margin-bottom:24px}
+  .voice-status{font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:2px}
+
+  .install-banner{position:fixed;bottom:46px;left:16px;right:16px;background:var(--bg3);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:150;animation:slideUp .4s ease;box-shadow:0 4px 30px rgba(245,166,35,.2)}
+  .install-banner.hidden{display:none}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .install-text{flex:1;font-size:12px;line-height:1.4;color:var(--muted)}
+  .install-text b{color:var(--text)}
+  .install-btn{background:var(--accent);border:none;border-radius:6px;color:var(--bg);font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:1px;padding:8px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .install-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px}
+
+  .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--green);color:var(--bg);border-radius:20px;padding:8px 20px;font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:1px;opacity:0;transition:all .3s;pointer-events:none;z-index:9998;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .footer-credit{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:5px 16px;display:flex;align-items:center;justify-content:center;gap:6px;z-index:40}
+  .credit-label{font-size:9px;color:var(--muted);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase}
+  .credit-name{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:3px;color:var(--accent);text-transform:uppercase}
+  .credit-dot{width:4px;height:4px;border-radius:50%;background:var(--border)}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty-state .e-icon{font-size:48px;margin-bottom:16px}
+  .empty-state p{font-size:13px;line-height:1.8}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">STORAGE<span>BOX INVENTORY SYSTEM</span></div>
+    <div class="stats-pill"><b id="totalItems">0</b> items</div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text" placeholder="🔎 Search item..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    <button class="voice-btn" id="voiceBtn" onclick="startVoice()" title="Voice Search">🎤</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="content" id="content"></div>
+
+<button class="fab" onclick="openAddBoxModal()"><span>＋</span> ADD BOX</button>
+
+<div class="footer-credit">
+  <span class="credit-label">Builder / Coder</span>
+  <div class="credit-dot"></div>
+  <span class="credit-name">MEL MAJORENOS</span>
+</div>
+
+<div class="install-banner hidden" id="installBanner">
+  <span style="font-size:24px">📲</span>
+  <div class="install-text"><b>Install sa Home Screen</b><br>Works offline anytime</div>
+  <button class="install-btn" id="installBtn">INSTALL</button>
+  <button class="install-close" onclick="document.getElementById('installBanner').classList.add('hidden')">✕</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ADD BOX MODAL -->
+<div class="modal-overlay" id="addBoxModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">NEW BOX</div>
+    <input class="modal-input" id="newBoxName" placeholder="Box name (e.g. RAZER GREEN BOX)" autocomplete="off"/>
+    <input class="modal-input" id="newBoxIcon" placeholder="Emoji icon (e.g. 📦)"/>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('addBoxModal')">CANCEL</button>
+      <button class="modal-confirm" onclick="confirmAddBox()">CREATE BOX</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ITEM MODAL -->
+<div class="modal-overlay" id="editItemModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">EDIT ITEM</div>
+    <input class="modal-input" id="editItemInput" placeholder="Item name" autocomplete="off"/>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('editItemModal')">CANCEL</button>
+      <button class="modal-confirm" onclick="confirmEditItem()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENAME BOX MODAL -->
+<div class="modal-overlay" id="renameBoxModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">RENAME BOX</div>
+    <input class="modal-input" id="renameBoxName" placeholder="New box name" autocomplete="off"/>
+    <input class="modal-input" id="renameBoxIcon" placeholder="Emoji icon"/>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('renameBoxModal')">CANCEL</button>
+      <button class="modal-confirm" onclick="confirmRenameBox()">RENAME</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE BOX MODAL -->
+<div class="modal-overlay" id="deleteBoxModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">DELETE BOX?</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Permanently deletes the box and all its items. Cannot be undone.</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal('deleteBoxModal')">CANCEL</button>
+      <button class="modal-danger" onclick="confirmDeleteBox()">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- VOICE MODAL -->
+<div class="modal-overlay" id="voiceModal">
+  <div class="voice-modal">
+    <div class="voice-rings">
+      <div class="voice-ring"></div><div class="voice-ring"></div><div class="voice-ring"></div>
+      <div class="voice-mic-inner">🎤</div>
+    </div>
+    <div class="voice-label" id="voiceLabel">LISTENING...</div>
+    <div class="voice-status" id="voiceStatus">SPEAK NOW</div>
+    <div class="voice-transcript" id="voiceTranscript"></div>
+    <div class="modal-btns" style="justify-content:center">
+      <button class="modal-cancel" style="flex:0 0 auto;padding:10px 30px" onclick="stopVoice()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────
+const DEFAULT_DATA = [
+  {id:'box1',name:'RAZER GREEN BOX',icon:'🟢',items:['Small Cleaning Brushes','Camera Sensor Cleaner','SD Card Reader','Door Keys/Lock','Sata Cables','Small Type C Cable']},
+  {id:'box2',name:'AIR LIFE ENSENSE BOX',icon:'🌬️',items:['Velcro Cable Straps','Magnetic Cable Lock','PCI Slot Cover Dust Filter']},
+  {id:'box3',name:'MINI DC UPS BOX',icon:'⚡',items:['Round Nail Clip Clamp','Push Pin Thumbtack','Cables','Thumbtacks']},
+  {id:'box4',name:'BLACK BOX GREEN TAG',icon:'🖤',items:['Rubber Plug Dust','Bluetooth Dongle Music']},
+  {id:'box5',name:'BLACK BOX BLUE TAG',icon:'🔷',items:['Paper Clamp/Clip','Bolts/Tox']},
+  {id:'box6',name:'AIRBED BOX',icon:'📦',items:['Transparent Celofen for Paper','CUYI Celofens']}
+];
+
+let boxes = JSON.parse(localStorage.getItem('inventory_boxes')||'null') || DEFAULT_DATA;
+let activeFilter = 'ALL';
+let editTarget = null, renameTarget = null, deleteTarget = null;
+let deferredInstallPrompt = null;
+let recognition = null;
+
+function save(){ localStorage.setItem('inventory_boxes', JSON.stringify(boxes)); }
+function getTotalItems(){ return boxes.reduce((a,b)=>a+b.items.length,0); }
+
+// ─── RENDER ──────────────────────────────────────────────────────────
+function renderTabs(){
+  const t = document.getElementById('tabs');
+  t.innerHTML = `<button class="tab ${activeFilter==='ALL'?'active':''}" onclick="filterBoxes('ALL',this)">ALL</button>`;
+  boxes.forEach(b => {
+    t.innerHTML += `<button class="tab ${activeFilter===b.id?'active':''}" onclick="filterBoxes('${b.id}',this)">${b.icon} ${b.name.split(' ')[0]}</button>`;
+  });
+}
+
+function filterBoxes(id, el){
+  activeFilter = id;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderBoxes();
+}
+
+function renderBoxes(query=''){
+  document.getElementById('totalItems').textContent = getTotalItems();
+  const content = document.getElementById('content');
+  const q = query.trim().toLowerCase();
+
+  if(q){
+    let results = [];
+    boxes.forEach(box => {
+      box.items.forEach((item,i) => {
+        if(item.toLowerCase().includes(q)) results.push({item, box, i});
+      });
+    });
+    if(!results.length){
+      content.innerHTML = `<div class="no-results"><div class="icon">🔍</div>No results for "<b>${query}</b>"</div>`;
+    } else {
+      content.innerHTML = results.map(r=>`
+        <div class="search-result">
+          <div class="result-item">${highlight(r.item,q)}</div>
+          <div class="result-box">
+            <span>${r.box.icon}</span>
+            <span class="result-arrow">▶</span>
+            <span class="result-location">${r.box.name}</span>
+          </div>
+        </div>`).join('');
+    }
+    renderTabs(); return;
+  }
+
+  const filtered = activeFilter==='ALL' ? boxes : boxes.filter(b=>b.id===activeFilter);
+  if(!filtered.length){
+    content.innerHTML = `<div class="empty-state"><div class="e-icon">📦</div><p>No boxes yet.<br>Tap <b>+ ADD BOX</b> to create one.</p></div>`;
+    renderTabs(); return;
+  }
+
+  content.innerHTML = filtered.map(box=>`
+    <div class="box-card" id="card-${box.id}">
+      <div class="box-header" onclick="toggleBox('${box.id}')">
+        <span class="box-icon">${box.icon}</span>
+        <span class="box-name">${box.name}</span>
+        <span class="box-count">${box.items.length} items</span>
+        <span class="box-chevron">▼</span>
+      </div>
+      <div class="box-actions">
+        <button class="box-action-btn rename" onclick="openRenameBox('${box.id}')">✏️ Rename</button>
+        <button class="box-action-btn del" onclick="openDeleteBox('${box.id}')">🗑️ Delete Box</button>
+      </div>
+      <div class="box-body" id="body-${box.id}">
+        <ul class="items-list">
+          ${box.items.map((item,i)=>`
+            <li class="item-row">
+              <span class="item-dot"></span>
+              <span class="item-text">${item}</span>
+              <button class="item-edit" onclick="openEditItem('${box.id}',${i})">✏️</button>
+              <button class="item-delete" onclick="deleteItem('${box.id}',${i})">🗑️</button>
+            </li>`).join('')}
+        </ul>
+        <div class="add-row">
+          <input class="add-input" id="addInput-${box.id}" placeholder="Add item..." autocomplete="off"
+            onkeydown="if(event.key==='Enter')addItem('${box.id}')"/>
+          <button class="add-btn" onclick="addItem('${box.id}')">ADD</button>
+        </div>
+      </div>
+    </div>`).join('');
+  renderTabs();
+}
+
+function highlight(text,q){
+  const i=text.toLowerCase().indexOf(q);
+  if(i<0)return text;
+  return text.slice(0,i)+`<mark style="background:var(--accent);color:var(--bg);border-radius:2px">${text.slice(i,i+q.length)}</mark>`+text.slice(i+q.length);
+}
+
+function toggleBox(id){
+  document.getElementById('card-'+id).classList.toggle('open');
+}
+
+// ─── ITEMS ───────────────────────────────────────────────────────────
+function addItem(boxId){
+  const input=document.getElementById('addInput-'+boxId);
+  const val=input.value.trim(); if(!val)return;
+  boxes.find(b=>b.id===boxId).items.push(val);
+  input.value=''; save(); renderBoxes();
+  document.getElementById('card-'+boxId)?.classList.add('open');
+  showToast('✅ Item added!');
+}
+
+function openEditItem(boxId,idx){
+  editTarget={boxId,idx};
+  document.getElementById('editItemInput').value=boxes.find(b=>b.id===boxId).items[idx];
+  openModal('editItemModal');
+  setTimeout(()=>document.getElementById('editItemInput').focus(),300);
+}
+
+function confirmEditItem(){
+  if(!editTarget)return;
+  const val=document.getElementById('editItemInput').value.trim(); if(!val)return;
+  boxes.find(b=>b.id===editTarget.boxId).items[editTarget.idx]=val;
+  save(); closeModal('editItemModal'); renderBoxes();
+  document.getElementById('card-'+editTarget.boxId)?.classList.add('open');
+  showToast('✅ Item updated!'); editTarget=null;
+}
+
+function deleteItem(boxId,idx){
+  boxes.find(b=>b.id===boxId).items.splice(idx,1);
+  save(); renderBoxes();
+  document.getElementById('card-'+boxId)?.classList.add('open');
+  showToast('🗑️ Item deleted');
+}
+
+// ─── BOXES ───────────────────────────────────────────────────────────
+function openAddBoxModal(){
+  document.getElementById('newBoxName').value='';
+  document.getElementById('newBoxIcon').value='';
+  openModal('addBoxModal');
+  setTimeout(()=>document.getElementById('newBoxName').focus(),300);
+}
+
+function confirmAddBox(){
+  const name=document.getElementById('newBoxName').value.trim().toUpperCase();
+  const icon=document.getElementById('newBoxIcon').value.trim()||'📦';
+  if(!name)return;
+  boxes.push({id:'box_'+Date.now(),name,icon,items:[]});
+  save(); closeModal('addBoxModal'); renderBoxes(); showToast('📦 Box created!');
+}
+
+function openRenameBox(id){
+  renameTarget=id;
+  const b=boxes.find(x=>x.id===id);
+  document.getElementById('renameBoxName').value=b.name;
+  document.getElementById('renameBoxIcon').value=b.icon;
+  openModal('renameBoxModal');
+  setTimeout(()=>document.getElementById('renameBoxName').focus(),300);
+}
+
+function confirmRenameBox(){
+  if(!renameTarget)return;
+  const name=document.getElementById('renameBoxName').value.trim().toUpperCase();
+  const icon=document.getElementById('renameBoxIcon').value.trim();
+  if(!name)return;
+  const b=boxes.find(x=>x.id===renameTarget);
+  b.name=name; if(icon)b.icon=icon;
+  save(); closeModal('renameBoxModal'); renderBoxes(); showToast('✏️ Box renamed!'); renameTarget=null;
+}
+
+function openDeleteBox(id){ deleteTarget=id; openModal('deleteBoxModal'); }
+
+function confirmDeleteBox(){
+  if(!deleteTarget)return;
+  boxes=boxes.filter(b=>b.id!==deleteTarget);
+  if(activeFilter===deleteTarget)activeFilter='ALL';
+  save(); closeModal('deleteBoxModal'); renderBoxes(); showToast('🗑️ Box deleted'); deleteTarget=null;
+}
+
+// ─── SEARCH ──────────────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input',function(){
+  document.getElementById('searchClear').style.display=this.value?'block':'none';
+  renderBoxes(this.value);
+});
+
+function clearSearch(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchClear').style.display='none';
+  renderBoxes();
+}
+
+// ─── VOICE ───────────────────────────────────────────────────────────
+function startVoice(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if(!SR){
+    // Fallback: manual text entry via prompt-style modal
+    showVoiceFallback();
+    return;
+  }
+
+  // Check if we're on HTTPS or localhost
+  if(location.protocol !== 'https:' && location.hostname !== 'localhost'){
+    showToast('⚠️ Voice needs HTTPS. Use manual search.');
+    return;
+  }
+
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+
+  openModal('voiceModal');
+  document.getElementById('voiceBtn').classList.add('listening');
+  document.getElementById('voiceLabel').textContent = 'LISTENING...';
+  document.getElementById('voiceStatus').textContent = 'SPEAK NOW';
+  document.getElementById('voiceTranscript').textContent = '';
+
+  recognition.onresult = (e) => {
+    let interim='', final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    document.getElementById('voiceTranscript').textContent = final||interim;
+    if(final){
+      stopVoice();
+      document.getElementById('searchInput').value = final;
+      document.getElementById('searchClear').style.display = 'block';
+      renderBoxes(final);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    document.getElementById('voiceLabel').textContent = 'ERROR';
+    document.getElementById('voiceStatus').textContent = e.error==='not-allowed' ? 'MIC PERMISSION DENIED' : 'TRY AGAIN';
+    setTimeout(stopVoice, 2000);
+  };
+
+  recognition.onend = () => {
+    if(document.getElementById('voiceModal').classList.contains('open')){
+      document.getElementById('voiceLabel').textContent = 'DONE';
+      setTimeout(stopVoice, 500);
+    }
+  };
+
+  try { recognition.start(); } catch(e){ stopVoice(); }
+}
+
+function showVoiceFallback(){
+  // Show a simple input in the voice modal without actual speech
+  openModal('voiceModal');
+  document.getElementById('voiceLabel').textContent = 'VOICE N/A';
+  document.getElementById('voiceStatus').textContent = 'TYPE TO SEARCH';
+  document.getElementById('voiceTranscript').innerHTML = `
+    <input id="voiceFallbackInput" placeholder="Type item name..." 
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:8px 12px;outline:none;width:100%;margin-top:8px"
+      onkeydown="if(event.key==='Enter'){
+        const v=this.value.trim();
+        if(v){
+          stopVoice();
+          document.getElementById('searchInput').value=v;
+          document.getElementById('searchClear').style.display='block';
+          renderBoxes(v);
+        }
+      }"/>
+    <button onclick="const v=document.getElementById('voiceFallbackInput').value.trim();if(v){stopVoice();document.getElementById('searchInput').value=v;document.getElementById('searchClear').style.display='block';renderBoxes(v);}"
+      style="margin-top:10px;background:var(--accent);border:none;border-radius:6px;color:var(--bg);font-family:var(--display);font-weight:700;font-size:13px;padding:8px 20px;cursor:pointer;letter-spacing:1px">
+      SEARCH
+    </button>`;
+  setTimeout(()=>document.getElementById('voiceFallbackInput')?.focus(), 300);
+}
+
+function stopVoice(){
+  closeModal('voiceModal');
+  document.getElementById('voiceBtn').classList.remove('listening');
+  if(recognition){ try{recognition.stop();}catch(e){} recognition=null; }
+}
+
+// ─── MODALS ──────────────────────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); });
+});
+
+// ─── TOAST ───────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ─── PWA INSTALL ─────────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  document.getElementById('installBanner').classList.remove('hidden');
+});
+
+document.getElementById('installBtn').addEventListener('click',()=>{
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(()=>{
+    deferredInstallPrompt=null;
+    document.getElementById('installBanner').classList.add('hidden');
+  });
+});
+
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBanner').classList.add('hidden');
+  showToast('✅ App installed!');
+});
+
+// ─── SERVICE WORKER ──────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js')
+    .then(()=>console.log('SW registered'))
+    .catch(e=>console.log('SW error:',e));
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+renderBoxes();
+</script>
+</body>
+</html>
