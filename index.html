@@ -1,26 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Storage Cipher</title><link rel="manifest" href="manifest.json">
-<style>
-body{margin:0;font-family:Arial;background:#050816;color:#fff}
-.bg{position:fixed;inset:0;background:radial-gradient(circle at top,#0e1c3a,#050816)}
-.wrap{padding:20px;max-width:700px;margin:auto;position:relative}
-.card{background:rgba(20,26,42,.7);border:1px solid rgba(120,140,255,.18);border-radius:22px;padding:16px;margin:12px 0}
-input,button,select{border-radius:14px;border:none;padding:12px}
-button{background:#C7FF2F;font-weight:700}
-.row{display:flex;gap:8px}
-.small{opacity:.7;font-size:12px}
-</style></head>
-<body><div class="bg"></div><div class="wrap">
-<h1>STORAGE CIPHER</h1><div class="small">by Mel Majorenos</div>
-<div class="row"><input id="boxName" placeholder="Add box" style="flex:1"><button onclick="addBox()">+ ADD BOX</button></div>
-<div id="list"></div></div>
-<script>
-let boxes=JSON.parse(localStorage.getItem('boxes')||'[]');
-function save(){localStorage.setItem('boxes',JSON.stringify(boxes));render();}
-function addBox(){const n=document.getElementById('boxName').value.trim();if(!n)return;boxes.push({id:Date.now(),name:n,items:[]});document.getElementById('boxName').value='';save();}
-function addItem(id){const t=prompt('Item name'); if(!t)return; boxes.find(x=>x.id===id).items.push(t); save();}
-function del(id){boxes=boxes.filter(x=>x.id!==id); save();}
-function render(){document.getElementById('list').innerHTML=boxes.map(b=>`<div class="card"><div class=row style="justify-content:space-between"><b>${b.name}</b><span>${b.items.length} items</span></div><div>${b.items.map(i=>`• ${i}`).join('<br>')||'<span class=small>No items</span>'}</div><div class=row style="margin-top:10px"><button onclick="addItem(${b.id})">Add item</button><button onclick="del(${b.id})">Delete</button></div></div>`).join('')}
-render();
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js')}
-</script></body></html>
+<!DOCTYPE html>
+<html>
+...
+</html>
